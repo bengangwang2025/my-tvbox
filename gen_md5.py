@@ -1,6 +1,8 @@
 import hashlib
 import sys
 import os
+import json
+import re
 
 def generate_md5(file_path):
     """
@@ -28,6 +30,32 @@ def generate_md5(file_path):
         print(f"  MD5: {md5_hash}")
         print(f"  Saved to: {md5_file_path}")
         
+        # 尝试更新 tvbox_config.json
+        config_path = "tvbox_config.json"
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_str = f.read()
+                
+                # 使用正则替换 spider 字段中的 MD5
+                # 匹配模式: "spider": "./index.js;md5;[a-f0-9]{32}" 或类似
+                # 这里假设文件名可能不同，但格式固定
+                
+                filename = os.path.basename(file_path)
+                # Remove quotes to match inside the string value (handling ./ prefix)
+                pattern = f'{filename};md5;([a-fA-F0-9]+)'
+                replacement = f'{filename};md5;{md5_hash}'
+                
+                if re.search(pattern, config_str):
+                    new_config_str = re.sub(pattern, replacement, config_str)
+                    with open(config_path, 'w', encoding='utf-8') as f:
+                        f.write(new_config_str)
+                    print(f"  Updated {config_path} with new MD5.")
+                else:
+                    print(f"  Warning: Pattern for {filename} not found in {config_path}")
+            except Exception as e:
+                print(f"  Failed to update config: {e}")
+
     except Exception as e:
         print(f"An error occurred: {e}")
 
